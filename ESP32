@@ -1,0 +1,131 @@
+#include <WiFi.h>
+#include <WebServer.h>
+
+// Replace with your network credentials
+const char* ssid = "Kiko";
+const char* password = "viki2910";
+
+// Pin definitions
+const int relayPin = 5;
+const int buttonPin = 0;
+
+WebServer server(80);
+
+// Variables to store relay status and activation times
+bool relayStatus = false;
+int buttonState = HIGH;
+unsigned long startTime;
+
+// Function to update relay status based on button press
+void updateRelay() {
+  buttonState = digitalRead(buttonPin);
+  if (buttonState == LOW) {
+    digitalWrite(relayPin, HIGH);
+    relayStatus = true;
+    startTime = millis();
+  } else {
+    unsigned long currentTime = millis();
+    if (relayStatus && (currentTime - startTime >= 300000)) {
+      digitalWrite(relayPin, LOW);
+      relayStatus = false;
+    }
+  }
+}
+
+// Function to handle client requests
+void handleClient() {
+  String html = "<html><head><style>\
+    form {\
+      display: flex;\
+      justify-content: center;\
+      align-items: center;\
+      height: 100vh;\
+      flex-direction: column;\
+    }\
+    input[type='submit'] {\
+      margin: 1em;\
+      padding: 1em 2em;\
+      font-size: 1.2em;\
+      border-radius: 4px;\
+      border: 1px solid #ddd;\
+      background-color: #fff;\
+      cursor: pointer;\
+    }\
+    input[type='submit']:hover {\
+      background-color: #ddd;\
+    }\
+    p {\
+      margin-top: 1em;\
+      font-size: 1.2em;\
+      text-align: center;\
+    }\
+    .relay-activated {\
+      color: green;\
+    }\
+    .relay-deactivated {\
+      color: red;\
+    }\
+  </style></head><body>\
+  <form method='get'>\
+    <input type='submit' value='Activate 5 minutes' name='activate5'>\
+    <input type='submit' value='Activate 10 minutes' name='activate10'>\
+    <input type='submit' value='Activate 30 minutes' name='activate30'>\
+    <input type='submit' value='Deactivate' name='deactivate'>\
+  </form>\
+  <p class='";
+  
+  html += relayStatus ? "relay-activated" : "relay-deactivated";
+  //html += "'>" + (relayStatus ? "Relay Activated" : "Relay Deactivated") + "</p>\
+  html += "<p style='color:green;'>" + (relayStatus ? "Relay Activated" : "Relay Deactivated") + "</p>\";
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
+
+  if (server.hasArg("activate5")) {
+    startTime = millis();
+    relayStatus = true;
+    digitalWrite(relayPin, HIGH);
+  }
+  if (server.hasArg("activate10")) {
+    startTime = millis();
+    relayStatus = true;
+    digitalWrite(relayPin, HIGH);
+  }
+  if (server.hasArg("activate30")) {
+    startTime = millis();
+    relayStatus = true;
+    digitalWrite(relayPin, HIGH);
+  }
+  if (server.hasArg("deactivate")) {
+    digitalWrite(relayPin, LOW);
+    relayStatus = false;
+  }
+}
+
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, LOW);
+
+  pinMode(buttonPin, INPUT);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+
+ Serial.println("Connected to WiFi");
+
+// Start the server
+server.on("/", handleClient);
+server.begin();
+Serial.println("Web server started!");
+}
+
+void loop() {
+server.handleClient();
+updateRelay();
+}
