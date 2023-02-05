@@ -2,8 +2,8 @@
 #include <WebServer.h>
 
 // Replace with your network credentials
-const char* ssid = "Kiko";
-const char* password = "viki2910";
+const char* ssid = "SSID";
+const char* password = "SSID_password";
 
 // Pin definitions
 const int relayPin = 5;
